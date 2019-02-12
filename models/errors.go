@@ -48,5 +48,3 @@ var ContractStopAfterStopError = TrackerError{2097, `"stop" event cannot be save
 var ContractStartAfterLogError = TrackerError{2097, `"start" event cannot be saved when last event was "log"`}
 
 var ContractIsNotStarted = TrackerError{2097, `Contract is not in "started" state and events cannot be logged into it`}
-
-var UnknownError = TrackerError{2990, "Unknown error"}

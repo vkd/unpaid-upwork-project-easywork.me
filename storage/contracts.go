@@ -31,7 +31,7 @@ func (s *Storage) ContractsCreate(ctx context.Context, c *models.Contract) (*mod
 }
 
 // ContractsUpdateStatus - update status of contract
-func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, role models.UserRole, status models.ContractStatus) error {
+func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, role models.Role, status models.ContractStatus) error {
 	c, err := s.ContractGet(ctx, cID, role)
 	if err != nil {
 		return errors.Wrapf(err, "cannot update status of contract (id: %v)", cID)
@@ -62,7 +62,7 @@ func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, 
 	return nil
 }
 
-func (s *Storage) ContractGet(ctx context.Context, cID bson.ObjectId, role models.UserRole) (*models.Contract, error) {
+func (s *Storage) ContractGet(ctx context.Context, cID bson.ObjectId, role models.Role) (*models.Contract, error) {
 	panic("Not implemented - auth depends, with join")
 	var c models.Contract
 	err := s.contracts().FindOne(ctx, bson.M{"_id": cID}).Decode(&c)

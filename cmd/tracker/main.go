@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	addr       = flag.String("addr", env("EW_ADDR", ":8000"), "Addr of service")
-	mongodbURI = flag.String("mongo", env("EW_MONGODB_URI", "mongodb://localhost:27017"), "URI of mongodb")
+	addr       = flag.String("addr", env("ADDR", ":8000"), "Addr of service")
+	mongodbURI = flag.String("mongo", env("MONGODB_URI", "mongodb://localhost:27017"), "URI of mongodb")
+	secretJWT  = flag.String("secret", env("SECRET_JWT", "test_secret"), "Secret of jwt token")
 
 	isDebug = flag.Bool("debug", false, "Start service in debug mode")
 )
@@ -32,6 +33,7 @@ func main() {
 
 	var cfg Config
 	cfg.Server.Addr = *addr
+	cfg.Server.SecretJWT = []byte(*secretJWT)
 	cfg.MongoDB.URI = *mongodbURI
 	cfg.IsDebug = *isDebug
 
@@ -55,7 +57,7 @@ func main() {
 }
 
 func env(key, defValue string) string {
-	v, ok := os.LookupEnv(key)
+	v, ok := os.LookupEnv("EW_" + key)
 	if ok {
 		return v
 	}

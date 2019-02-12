@@ -72,8 +72,11 @@ func (s *Storage) InvitationUpdateStatus(ctx context.Context, iID bson.ObjectId,
 // InvitationGet - get one invitation by id
 func (s *Storage) InvitationGet(ctx context.Context, iID bson.ObjectId) (*models.Invitation, error) {
 	var i models.Invitation
-	err := s.invitations().FindOne(ctx, iID).Decode(&i)
+	err := s.invitations().FindOne(ctx, bson.M{"_id": iID}).Decode(&i)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, &models.InvitationNotFound
+		}
 		return nil, errors.Wrapf(err, "error on get invitation (id: %v)", iID)
 	}
 	return &i, nil

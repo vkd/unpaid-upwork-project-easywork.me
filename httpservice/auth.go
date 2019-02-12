@@ -49,7 +49,7 @@ func setUser(c *gin.Context, user *models.User) {
 	c.Set("user", user)
 }
 
-func AccessRole(roles ...models.UserRole) gin.HandlerFunc {
+func AccessRole(roles ...models.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := getUser(c)
 		for _, r := range roles {

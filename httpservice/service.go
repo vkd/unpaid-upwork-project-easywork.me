@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"gitlab.com/easywork.me/backend/models"
 	"gitlab.com/easywork.me/backend/storage"
 )
@@ -24,20 +25,41 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 		r = gin.New()
 	}
 
-	// r.POST("/login", loginHandler(db))
+	claimer := &claimCreator{secret: cfg.SecretJWT}
+
+	// CreateUser
+	r.POST("/users", userCreateHandler(db, claimer)) // +
 
 	auth := r.Group("/", authMiddleware(cfg.SecretJWT))
-	invitation := auth.Group("/invitations")
+	invitations := auth.Group("/invitations")
 	{
-		invitation.POST("/:id/accept", AccessRole(models.Work), invitationAcceptHandler(db))
-		invitation.POST("/", AccessRole(models.Hire), invitationCreateHandler(db))
+		invitations.POST("/:id/accept", AccessRole(models.Work), invitationAcceptHandler(db))
+		invitations.POST("/", AccessRole(models.Hire), invitationCreateHandler(db))
+	}
+	projects := auth.Group("/projects")
+	{
+		projects.POST("/", projectCreateHandler(db))
 	}
 
 	log.Printf("Web server is running on %s", cfg.Addr)
 	return r.Run(cfg.Addr)
 }
 
-func apiError(c *gin.Context, code int, err interface{}) {
+func apiError(c *gin.Context, code int, obj interface{}) {
 	c.Abort()
-	c.JSON(code, err)
+
+	err, ok := obj.(error)
+	if !ok {
+		c.JSON(code, obj)
+		return
+	}
+
+	switch e := errors.Cause(err).(type) {
+	case *models.TrackerError:
+		c.JSON(code, e)
+	default:
+		c.JSON(code, gin.H{
+			"error": err.Error(),
+		})
+	}
 }

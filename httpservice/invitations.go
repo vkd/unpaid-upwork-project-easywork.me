@@ -38,7 +38,11 @@ func invitationCreateHandler(db *storage.Storage) gin.HandlerFunc {
 func invitationAcceptHandler(db *storage.Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := getUser(c)
-		invID := ObjectIDParam(c, "id")
+		invID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
 
 		invitation, err := db.InvitationUpdateStatus(c, invID, user.ID, models.InvitationStatusAccepted)
 		if err != nil {

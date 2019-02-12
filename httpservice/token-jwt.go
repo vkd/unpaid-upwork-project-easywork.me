@@ -3,6 +3,7 @@ package httpservice
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
@@ -12,12 +13,31 @@ import (
 type UserTokenWithClaims struct {
 	jwt.StandardClaims
 
-	Rol models.UserRole `json:"rol,omitempty"`
+	Role      models.Role `json:"rol,omitempty"`
+	FirstName string      `json:"fir,omitempty"`
+	LastName  string      `json:"las,omitempty"`
 }
 
-// func CreateTokenString() (string, error) {
-// 	jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-// }
+type claimCreator struct {
+	secret []byte
+}
+
+type ClaimCreator interface {
+	CreateClaim(*models.User) (string, error)
+}
+
+func (c *claimCreator) CreateClaim(u *models.User) (string, error) {
+	var claim UserTokenWithClaims
+	claim.ExpiresAt = time.Now().AddDate(0, 0, 7).Unix()
+	claim.Id = string(u.ID)
+	claim.Subject = u.Email
+	claim.Role = u.Role
+	claim.FirstName = u.FirstName
+	claim.LastName = u.LastName
+
+	str, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claim).SignedString(c.secret)
+	return str, err
+}
 
 func VerifyTokenString(tokenString string, secret []byte) (*models.User, error) {
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
@@ -28,14 +48,14 @@ func VerifyTokenString(tokenString string, secret []byte) (*models.User, error) 
 		}
 		return secret, nil
 	})
-	if validationError, ok := err.(*jwt.ValidationError); ok {
-		if validationError.Errors&jwt.ValidationErrorMalformed != 0 {
-			return nil, &models.JwtTokenParseError
-		} else if validationError.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			return nil, &models.JwtTokenExpiredError
-		}
-	}
 	if err != nil {
+		if validationError, ok := err.(*jwt.ValidationError); ok {
+			if validationError.Errors&jwt.ValidationErrorMalformed != 0 {
+				return nil, &models.JwtTokenParseError
+			} else if validationError.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+				return nil, &models.JwtTokenExpiredError
+			}
+		}
 		return nil, err
 	}
 
@@ -51,7 +71,7 @@ func VerifyTokenString(tokenString string, secret []byte) (*models.User, error) 
 	var user models.User
 	user.ID = models.UserID(c.StandardClaims.Id)
 	user.Email = c.StandardClaims.Subject
-	user.Role = models.UserRole(c.Rol)
+	user.Role = models.Role(c.Role)
 
 	return &user, nil
 }

@@ -1,6 +1,8 @@
 package httpservice
 
 import (
+	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +20,12 @@ func IntParam(c *gin.Context, name string) (int, error) {
 	return i, nil
 }
 
-func ObjectIDParam(c *gin.Context, name string) bson.ObjectId {
-	p := c.Param(name)
-	return bson.ObjectIdHex(p)
+func ObjectIDParam(c *gin.Context, name string) (bson.ObjectId, error) {
+	s := c.Param(name)
+
+	d, err := hex.DecodeString(s)
+	if err != nil || len(d) != 12 {
+		return "", fmt.Errorf("invalid input to ObjectIdHex: %q", s)
+	}
+	return bson.ObjectId(d), nil
 }
