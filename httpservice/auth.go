@@ -4,43 +4,60 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gitlab.com/easywork.me/backend/models"
 )
 
-func authMiddleware(c *gin.Context) {
-	var userProfile *UserTokenWithClaims
-
-	authHeader := c.GetHeader("Authorization")
-	if authHeader != "" {
-		var tErr *TrackerError
-		userProfile, tErr = VerifyTokenString(authHeader)
-		if tErr != nil {
-			apiError(c, http.StatusUnauthorized, tErr)
+func authMiddleware(secretJWT []byte) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			apiError(c, http.StatusUnauthorized, &models.AccessForbidden)
 			return
 		}
-	}
 
-	var isAccessGranted bool
-	if !isAccessGranted {
-		apiError(c, http.StatusUnauthorized, &AccessForbidden)
-		return
-	}
+		user, err := VerifyTokenString(authHeader, secretJWT)
+		if err != nil {
+			apiError(c, http.StatusUnauthorized, err)
+			return
+		}
+		if user == nil {
+			apiError(c, http.StatusUnauthorized, &models.AccessForbidden)
+			return
+		}
 
-	setUser(c, userProfile)
-	c.Next()
+		setUser(c, user)
+		c.Next()
+	}
 }
 
-func getUser(c *gin.Context) *UserTokenWithClaims {
+func getUser(c *gin.Context) (out models.User) {
 	u, ok := c.Get("user")
 	if !ok {
-		return nil
+		return
 	}
-	user, ok := u.(*UserTokenWithClaims)
+	user, ok := u.(*models.User)
 	if !ok {
-		return nil
+		return
 	}
-	return user
+	return *user
 }
 
-func setUser(c *gin.Context, user *UserTokenWithClaims) {
+func setUser(c *gin.Context, user *models.User) {
+	if user == nil {
+		panic("user is nil") // impossible way
+	}
 	c.Set("user", user)
+}
+
+func AccessRole(roles ...models.UserRole) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+		for _, r := range roles {
+			if r == user.Role {
+				c.Next()
+				return
+			}
+		}
+		apiError(c, http.StatusUnauthorized, &models.AccessForbidden)
+	}
 }

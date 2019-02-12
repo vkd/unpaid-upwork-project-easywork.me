@@ -1,4 +1,4 @@
-package httpservice
+package models
 
 type TrackerError struct {
 	Code    int    `json:"code"`
@@ -33,6 +33,8 @@ var InvitationNotFound = TrackerError{2093, "Invitation not found"}
 var ContractNotFound = TrackerError{2094, "Contract not found"}
 var ContractAlreadyStarted = TrackerError{2094, "Contract already started"}
 var ContractAlreadyPaused = TrackerError{2094, "Contract already paused"}
+var ContractAlreadySameStatus = TrackerError{2094, "Contract already has same status"}
+var ContractNotChangedStatus = TrackerError{2094, "Contract's status not changed"}
 
 var TermsNotFound = TrackerError{2095, "Terms not found"}
 

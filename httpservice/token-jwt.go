@@ -1,51 +1,59 @@
 package httpservice
 
 import (
-	"log"
+	"fmt"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
+	"gitlab.com/easywork.me/backend/models"
 )
 
 type UserTokenWithClaims struct {
-	Id      string
-	Email   string
-	Role    string
-	Expires int64
+	jwt.StandardClaims
+
+	Rol models.UserRole `json:"rol,omitempty"`
 }
 
-func VerifyTokenString(tokenString string) (*UserTokenWithClaims, *TrackerError) {
-	var userTokenWithClaims *UserTokenWithClaims
-	pureTokenString := strings.TrimPrefix(tokenString, "Bearer ")
+// func CreateTokenString() (string, error) {
+// 	jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+// }
 
-	var jwtParser = jwt.Parser{UseJSONNumber: true}
-	token, jwtParseError := jwtParser.Parse(pureTokenString, TokenFunc)
+func VerifyTokenString(tokenString string, secret []byte) (*models.User, error) {
+	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
-	if validationError, ok := jwtParseError.(*jwt.ValidationError); ok {
+	token, err := jwt.ParseWithClaims(tokenString, &UserTokenWithClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return secret, nil
+	})
+	if validationError, ok := err.(*jwt.ValidationError); ok {
 		if validationError.Errors&jwt.ValidationErrorMalformed != 0 {
-			log.Println("That's not even a token")
-			return nil, &JwtTokenParseError
+			return nil, &models.JwtTokenParseError
 		} else if validationError.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			return nil, &JwtTokenExpiredError
-		} else {
-			log.Println("Couldn't handle this token:", jwtParseError)
+			return nil, &models.JwtTokenExpiredError
 		}
 	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-
-		if claims["jti"] == nil || claims["sub"] == nil || claims["rol"] == nil {
-			return nil, &JwtTokenParseError
-		}
-
-		stClaims := jwt.StandardClaims{Subject: claims["sub"].(string), Id: claims["jti"].(string)}
-		userTokenWithClaims = &UserTokenWithClaims{Email: stClaims.Subject, Expires: stClaims.ExpiresAt, Id: stClaims.Id, Role: claims["rol"].(string)}
-
-		return userTokenWithClaims, nil
-
-	} else {
-		return nil, &JwtTokenParseError
+	if err != nil {
+		return nil, err
 	}
+
+	var c *UserTokenWithClaims
+	var ok bool
+	if c, ok = token.Claims.(*UserTokenWithClaims); !ok {
+		return nil, errors.Errorf("wrong token claim type")
+	}
+	if c == nil {
+		return nil, errors.Errorf("wrong user claim (is nil)")
+	}
+
+	var user models.User
+	user.ID = models.UserID(c.StandardClaims.Id)
+	user.Email = c.StandardClaims.Subject
+	user.Role = models.UserRole(c.Rol)
+
+	return &user, nil
 }
 
 func TokenFunc(token *jwt.Token) (interface{}, error) {

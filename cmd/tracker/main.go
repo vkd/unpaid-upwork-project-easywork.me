@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"os"
 
-	"gitlab.com/easywork.me/backend/config"
+	"gitlab.com/easywork.me/backend/httpservice"
+	"gitlab.com/easywork.me/backend/storage"
 )
 
 var (
@@ -15,14 +17,41 @@ var (
 	isDebug = flag.Bool("debug", false, "Start service in debug mode")
 )
 
+type Config struct {
+	IsDebug bool
+
+	Server httpservice.Config
+
+	MongoDB struct {
+		URI string
+	}
+}
+
 func main() {
 	flag.Parse()
 
-	var cfg config.Config
-	cfg.Addr = *addr
+	var cfg Config
+	cfg.Server.Addr = *addr
 	cfg.MongoDB.URI = *mongodbURI
+	cfg.IsDebug = *isDebug
 
-	log.Printf("OK, %v", cfg)
+	if cfg.IsDebug {
+		log.Printf("Config, %v", cfg)
+	}
+
+	s, err := storage.NewMongoDB(context.Background(), cfg.MongoDB.URI)
+	if err != nil {
+		log.Fatalf("Error on get storage: %v", err)
+	}
+	err = s.Init(context.Background())
+	if err != nil {
+		log.Fatalf("Error on init storage: %v", err)
+	}
+
+	err = httpservice.Start(cfg.Server, cfg.IsDebug, s)
+	if err != nil {
+		log.Fatalf("Error on start service: %v", err)
+	}
 }
 
 func env(key, defValue string) string {
