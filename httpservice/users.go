@@ -28,7 +28,21 @@ func userCreateHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
 		}
 
 		if u.Email == "" || u.Password == "" {
-			apiError(c, http.StatusUnprocessableEntity, &models.UserEmailOrPasswordEmpty)
+			apiError(c, http.StatusBadRequest, &models.UserEmailOrPasswordEmpty)
+			return
+		}
+
+		if !IsUsernameValid(u.ID) {
+			apiError(c, http.StatusBadRequest, &models.WrongUsername)
+			return
+		}
+
+		if u.FirstName == "" {
+			apiError(c, http.StatusBadRequest, &models.EmptyFirstName)
+			return
+		}
+		if u.LastName == "" {
+			apiError(c, http.StatusBadRequest, &models.EmptyLastName)
 			return
 		}
 
@@ -39,20 +53,6 @@ func userCreateHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
 		}
 		if err != storage.ErrNotFound {
 			apiError(c, http.StatusInternalServerError, errors.Wrapf(err, "error on find user by email (email: %v)", u.Email))
-			return
-		}
-
-		if !IsUsernameValid(u.ID) {
-			apiError(c, http.StatusUnprocessableEntity, &models.WrongUsername)
-			return
-		}
-
-		if u.FirstName == "" {
-			apiError(c, http.StatusUnprocessableEntity, &models.EmptyFirstName)
-			return
-		}
-		if u.LastName == "" {
-			apiError(c, http.StatusUnprocessableEntity, &models.EmptyLastName)
 			return
 		}
 
@@ -68,13 +68,13 @@ func userCreateHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
 		}
 		out, err := db.UserCreate(c, &user)
 		if err != nil {
-			apiError(c, http.StatusUnprocessableEntity, err)
+			apiError(c, http.StatusInternalServerError, err)
 			return
 		}
 
 		token, err := cc.CreateClaim(out)
 		if err != nil {
-			apiError(c, http.StatusUnprocessableEntity, err)
+			apiError(c, http.StatusInternalServerError, err)
 			return
 		}
 

@@ -10,6 +10,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+// UserGet - get user
 func (s *Storage) UserGet(ctx context.Context, uID models.UserID) (*models.User, error) {
 	var u models.User
 	err := s.users().FindOne(ctx, bson.M{"id": uID}).Decode(&u)
@@ -37,6 +38,9 @@ func (s *Storage) UserGetByEmail(ctx context.Context, email string) (*models.Use
 
 // UserCreate - create user
 func (s *Storage) UserCreate(ctx context.Context, u *models.UserPassword) (*models.User, error) {
+	if u.Role == "" {
+		u.Role = models.Work
+	}
 	if err := models.CheckRole(u.Role); err != nil {
 		return nil, err
 	}

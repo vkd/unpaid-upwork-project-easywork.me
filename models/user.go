@@ -31,11 +31,6 @@ const (
 	Work Role = "work"
 )
 
-// IsWork - check role is work
-func IsWork(role Role) bool {
-	return role == Work
-}
-
 func CheckRole(r Role) error {
 	switch r {
 	case Hire, Work:

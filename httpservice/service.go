@@ -28,7 +28,7 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	claimer := &claimCreator{secret: cfg.SecretJWT}
 
 	// CreateUser
-	r.POST("/users", userCreateHandler(db, claimer)) // +
+	r.POST("/users", userCreateHandler(db, claimer))
 
 	auth := r.Group("/", authMiddleware(cfg.SecretJWT))
 	invitations := auth.Group("/invitations")
@@ -38,7 +38,8 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	}
 	projects := auth.Group("/projects")
 	{
-		projects.POST("/", projectCreateHandler(db))
+		// CreateProject
+		projects.POST("/", AccessRole(models.Hire), projectCreateHandler(db))
 	}
 
 	log.Printf("Web server is running on %s", cfg.Addr)

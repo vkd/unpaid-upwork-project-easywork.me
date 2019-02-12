@@ -1,12 +1,29 @@
 package httpservice
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"gitlab.com/easywork.me/backend/models"
 	"gitlab.com/easywork.me/backend/storage"
 )
 
 func projectCreateHandler(db *storage.Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		panic("Not implemented")
+		user := getUser(c)
+
+		var j models.ProjectBase
+		if err := c.ShouldBindJSON(&j); err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		p, err := db.ProjectCreate(c, &j, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, p)
 	}
 }

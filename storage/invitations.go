@@ -21,7 +21,7 @@ func (s *Storage) InvitationCreate(ctx context.Context, pID bson.ObjectId, invit
 		return nil, errors.Wrapf(err, "invitation not created")
 	}
 
-	if proj.OwnerId == u.ID {
+	if proj.OwnerID == u.ID {
 		return nil, &models.UserCannotBeInvitedToHisOwnProject
 	}
 
@@ -31,7 +31,7 @@ func (s *Storage) InvitationCreate(ctx context.Context, pID bson.ObjectId, invit
 	}
 
 	inv := models.NewInvitation()
-	inv.ProjectId = proj.Id
+	// inv.ProjectId = proj.ID
 	inv.OwnerID = user.ID
 	inv.InviteeID = u.ID
 	inv.InviteeEmail = u.Email
