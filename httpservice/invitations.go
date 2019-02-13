@@ -45,16 +45,16 @@ func invitationAcceptHandler(db *storage.Storage) gin.HandlerFunc {
 
 		invitation, err := db.InvitationUpdateStatus(c, invID, user.ID, models.InvitationStatusAccepted)
 		if err != nil {
-			apiError(c, http.StatusUnprocessableEntity, err)
+			apiError(c, http.StatusInternalServerError, err)
 			return
 		}
 
 		cb := models.NewContractBase().FromInvitation(invitation)
 		cb.Status = models.Started
 
-		contract, err := db.ContractsCreate(c, cb, user.ID)
+		contract, err := db.ContractsCreate(c, cb, invitation.OwnerID)
 		if err != nil {
-			apiError(c, http.StatusUnprocessableEntity, err)
+			apiError(c, http.StatusInternalServerError, err)
 			return
 		}
 

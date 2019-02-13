@@ -6,6 +6,7 @@ import (
 )
 
 var ErrNotFound = errors.New("not found")
+var ErrNoUpdated = errors.New("not updated")
 
 func IsNotFound(err error) bool {
 	err = errors.Cause(err)

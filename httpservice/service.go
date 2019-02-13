@@ -37,7 +37,7 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	{
 		// CreateInvitation
 		invitations.POST("/", AccessRole(models.Hire), invitationCreateHandler(db))
-
+		// AcceptInvitation
 		invitations.POST("/:id/accept", AccessRole(models.Work), invitationAcceptHandler(db))
 	}
 	projects := auth.Group("/projects")
@@ -69,6 +69,8 @@ func apiError(c *gin.Context, code int, obj interface{}) {
 	switch e {
 	case storage.ErrNotFound, mongo.ErrNoDocuments:
 		code = http.StatusNotFound
+	case storage.ErrNoUpdated:
+		code = http.StatusNotModified
 	}
 
 	switch e := e.(type) {
