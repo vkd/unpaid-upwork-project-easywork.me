@@ -53,7 +53,7 @@ func (s *Storage) InvitationCreate(ctx context.Context, inv *models.InvitationBa
 }
 
 // InvitationUpdateStatus - update status of invitation
-func (s *Storage) InvitationUpdateStatus(ctx context.Context, iID bson.ObjectId, uID models.UserID, status models.InvitationStatus) (*models.Invitation, error) {
+func (s *Storage) InvitationUpdateStatus(ctx context.Context, iID primitive.ObjectID, uID models.UserID, status models.InvitationStatus) (*models.Invitation, error) {
 	i, err := s.InvitationGet(ctx, iID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invitation not updated (id: %v)", iID)
@@ -63,7 +63,7 @@ func (s *Storage) InvitationUpdateStatus(ctx context.Context, iID bson.ObjectId,
 		return nil, &models.AccessForbidden
 	}
 
-	res, err := s.invitations().UpdateOne(ctx, iID, bson.M{"status": status})
+	res, err := s.invitations().UpdateOne(ctx, bson.M{"_id": iID}, bson.M{"status": status})
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on update status on invitation (id: %v)", iID)
 	}
@@ -76,9 +76,14 @@ func (s *Storage) InvitationUpdateStatus(ctx context.Context, iID bson.ObjectId,
 }
 
 // InvitationGet - get one invitation by id
-func (s *Storage) InvitationGet(ctx context.Context, iID bson.ObjectId) (*models.Invitation, error) {
+func (s *Storage) InvitationGet(ctx context.Context, iID primitive.ObjectID, ownerID ...models.UserID) (*models.Invitation, error) {
+	filter := bson.M{"_id": iID}
+	if len(ownerID) > 0 {
+		filter["owner_id"] = ownerID[0]
+	}
+
 	var i models.Invitation
-	err := s.invitations().FindOne(ctx, bson.M{"_id": iID}).Decode(&i)
+	err := s.invitations().FindOne(ctx, filter).Decode(&i)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, &models.InvitationNotFound

@@ -16,19 +16,21 @@ const (
 )
 
 // ContractsCreate - create contract
-func (s *Storage) ContractsCreate(ctx context.Context, c *models.Contract) (*models.Contract, error) {
+func (s *Storage) ContractsCreate(ctx context.Context, c *models.ContractBase, ownerID models.UserID) (*models.Contract, error) {
 	if c == nil {
-		c = models.NewContract()
+		c = models.NewContractBase()
 	}
 
+	c.OwnerID = ownerID
 	res, err := s.contracts().InsertOne(ctx, c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on insert new contract")
 	}
 
-	c.ID = res.InsertedID.(primitive.ObjectID)
-
-	return c, nil
+	var out models.Contract
+	out.ID = res.InsertedID.(primitive.ObjectID)
+	out.ContractBase = *c
+	return &out, nil
 }
 
 // ContractsUpdateStatus - update status of contract

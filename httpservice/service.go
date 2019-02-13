@@ -45,6 +45,11 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 		// CreateProject
 		projects.POST("/", AccessRole(models.Hire), projectCreateHandler(db))
 	}
+	contracts := auth.Group("/contracts")
+	{
+		// CreateContract
+		contracts.POST("/", AccessRole(models.Hire), contractsCreateHandler(db))
+	}
 
 	log.Printf("Web server is running on %s", cfg.Addr)
 	return r.Run(cfg.Addr)

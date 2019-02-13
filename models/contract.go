@@ -7,16 +7,21 @@ import (
 )
 
 type Contract struct {
-	ID     primitive.ObjectID `json:"id" bson:"_id"`
-	Status ContractStatus     `json:"status" bson:"status"`
+	ID primitive.ObjectID `json:"id" bson:"_id"`
 
-	ProjectID          primitive.ObjectID `json:"project_id" bson:"project_id"`
-	ProjectTitle       string             `json:"project_title" bson:"project_title"`
-	ProjectDescription string             `json:"project_description" bson:"project_description"`
-	ContractorID       UserID             `json:"contractor_id" bson:"contractor_id"`
-	OwnerID            string             `json:"owner_id" bson:"owner_id"`
-	TermsID            primitive.ObjectID `json:"terms_id" bson:"terms_id"`
-	CreatedDateTime    time.Time          `json:"created_date_time" bson:"created_date_time"`
+	ContractBase `bson:"inline"`
+}
+
+type ContractBase struct {
+	Status ContractStatus `json:"status" bson:"status"`
+
+	ProjectID primitive.ObjectID `json:"project_id" bson:"project_id"`
+	// ProjectTitle       string             `json:"project_title" bson:"project_title"`
+	// ProjectDescription string             `json:"project_description" bson:"project_description"`
+	ContractorID    UserID             `json:"contractor_id" bson:"contractor_id"`
+	OwnerID         UserID             `json:"owner_id" bson:"owner_id"`
+	TermsID         primitive.ObjectID `json:"terms_id" bson:"terms_id"`
+	CreatedDateTime time.Time          `json:"created_date_time" bson:"created_date_time"`
 }
 
 type ContractStatus string
@@ -28,21 +33,16 @@ const (
 	Ended      ContractStatus = "ended"
 )
 
-func NewContract() *Contract {
-	var c Contract
+func NewContractBase() *ContractBase {
+	var c ContractBase
 	c.Status = NotStarted
 	c.CreatedDateTime = time.Now()
 	return &c
 }
 
-func (c *Contract) FromInvitation(i *Invitation) *Contract {
+func (c *ContractBase) FromInvitation(i *Invitation) *ContractBase {
 	c.ProjectID = i.ProjectID
 	c.ContractorID = i.InviteeID
 	c.TermsID = i.TermsID
-	return c
-}
-
-func (c *Contract) SetStatus(status ContractStatus) *Contract {
-	c.Status = status
 	return c
 }
