@@ -11,8 +11,14 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func (s *Storage) ProjectGet(ctx context.Context, pID bson.ObjectId) (*models.Project, error) {
-	panic("Not implemented")
+// ProjectGetByOwner - get project
+func (s *Storage) ProjectGetByOwner(ctx context.Context, pID primitive.ObjectID, userID models.UserID) (*models.Project, error) {
+	var p models.Project
+	err := s.projects().FindOne(ctx, bson.M{"_id": pID, "owner_id": userID}).Decode(&p)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error on get project (id: %v)", pID)
+	}
+	return &p, nil
 }
 
 // ProjectCreate - create new project

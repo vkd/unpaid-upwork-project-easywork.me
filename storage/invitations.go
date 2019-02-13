@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/mongodb/mongo-go-driver/bson/primitive"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/pkg/errors"
 	"gitlab.com/easywork.me/backend/models"
@@ -10,40 +11,45 @@ import (
 )
 
 // InvitationCreate - create invitation
-func (s *Storage) InvitationCreate(ctx context.Context, pID bson.ObjectId, inviteeID models.UserID, tms *models.TermsSet, user *models.User) (*models.Invitation, error) {
-	proj, err := s.ProjectGet(ctx, pID)
+func (s *Storage) InvitationCreate(ctx context.Context, inv *models.InvitationBase, tmsb *models.TermsSetBase, userID models.UserID) (*models.Invitation, error) {
+	proj, err := s.ProjectGetByOwner(ctx, inv.ProjectID, userID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invitation not created")
 	}
 
-	u, err := s.UserGet(ctx, inviteeID)
+	u, err := s.UserGetByIDOrEmail(ctx, inv.InviteeID, inv.InviteeEmail)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invitation not created")
 	}
+	if u.Role != models.Work {
+		return nil, errors.Errorf("cannot allow to invite non-work type of user (id: %v, email: %v)", u.ID, u.Email)
+	}
 
-	if proj.OwnerID == u.ID {
+	inv.InviteeID = u.ID
+	inv.InviteeEmail = u.Email
+
+	if proj.OwnerID == inv.InviteeID {
 		return nil, &models.UserCannotBeInvitedToHisOwnProject
 	}
 
-	tms, err = s.TermsCreate(ctx, tms)
+	tms, err := s.TermsCreate(ctx, tmsb)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on create terms set")
 	}
 
-	inv := models.NewInvitation()
-	// inv.ProjectId = proj.ID
-	inv.OwnerID = user.ID
-	inv.InviteeID = u.ID
-	inv.InviteeEmail = u.Email
-	inv.TermsId = tms.ID
+	inv = inv.PreCreate()
+	inv.OwnerID = userID
+	inv.TermsID = tms.ID
 
 	res, err := s.invitations().InsertOne(ctx, inv)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on create invitation")
 	}
 
-	inv.ID = res.InsertedID.(bson.ObjectId)
-	return inv, nil
+	var out models.Invitation
+	out.InvitationBase = *inv
+	out.ID = res.InsertedID.(primitive.ObjectID)
+	return &out, nil
 }
 
 // InvitationUpdateStatus - update status of invitation

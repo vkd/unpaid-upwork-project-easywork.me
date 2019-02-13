@@ -3,20 +3,20 @@ package models
 import (
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
+	"github.com/mongodb/mongo-go-driver/bson/primitive"
 )
 
 type Contract struct {
-	ID     bson.ObjectId  `json:"id" bson:"_id"`
-	Status ContractStatus `json:"status" bson:"status"`
+	ID     primitive.ObjectID `json:"id" bson:"_id"`
+	Status ContractStatus     `json:"status" bson:"status"`
 
-	ProjectID          bson.ObjectId `json:"project_id" bson:"project_id"`
-	ProjectTitle       string        `json:"project_title" bson:"project_title"`
-	ProjectDescription string        `json:"project_description" bson:"project_description"`
-	ContractorID       UserID        `json:"contractor_id" bson:"contractor_id"`
-	OwnerId            string        `json:"owner_id" bson:"owner_id"`
-	TermsId            bson.ObjectId `json:"terms_id" bson:"terms_id"`
-	CreatedDateTime    time.Time     `json:"created_date_time" bson:"created_date_time"`
+	ProjectID          primitive.ObjectID `json:"project_id" bson:"project_id"`
+	ProjectTitle       string             `json:"project_title" bson:"project_title"`
+	ProjectDescription string             `json:"project_description" bson:"project_description"`
+	ContractorID       UserID             `json:"contractor_id" bson:"contractor_id"`
+	OwnerID            string             `json:"owner_id" bson:"owner_id"`
+	TermsID            primitive.ObjectID `json:"terms_id" bson:"terms_id"`
+	CreatedDateTime    time.Time          `json:"created_date_time" bson:"created_date_time"`
 }
 
 type ContractStatus string
@@ -36,9 +36,9 @@ func NewContract() *Contract {
 }
 
 func (c *Contract) FromInvitation(i *Invitation) *Contract {
-	c.ProjectID = i.ProjectId
+	c.ProjectID = i.ProjectID
 	c.ContractorID = i.InviteeID
-	c.TermsId = i.TermsId
+	c.TermsID = i.TermsID
 	return c
 }
 

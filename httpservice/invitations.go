@@ -4,30 +4,29 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gopkg.in/mgo.v2/bson"
 
 	"gitlab.com/easywork.me/backend/models"
 	"gitlab.com/easywork.me/backend/storage"
 )
 
 func invitationCreateHandler(db *storage.Storage) gin.HandlerFunc {
-	type invitationCreate struct {
-		InvitationID string `json:"invitation_id"`
-		models.TermsSet
+	type InvitationCreate struct {
+		models.InvitationBase
+		models.TermsSetBase
 	}
 	return func(c *gin.Context) {
 		user := getUser(c)
 
-		var j invitationCreate
+		var j InvitationCreate
 		err := c.ShouldBindJSON(&j)
 		if err != nil {
 			apiError(c, http.StatusBadRequest, err)
 			return
 		}
 
-		inv, err := db.InvitationCreate(c, bson.ObjectIdHex(j.InvitationID), user.ID, &j.TermsSet, &user)
+		inv, err := db.InvitationCreate(c, &j.InvitationBase, &j.TermsSetBase, user.ID)
 		if err != nil {
-			apiError(c, http.StatusUnprocessableEntity, err)
+			apiError(c, http.StatusInternalServerError, err)
 			return
 		}
 

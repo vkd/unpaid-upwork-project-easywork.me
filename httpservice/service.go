@@ -2,8 +2,10 @@ package httpservice
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/pkg/errors"
 	"gitlab.com/easywork.me/backend/models"
 	"gitlab.com/easywork.me/backend/storage"
@@ -33,8 +35,10 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	auth := r.Group("/", authMiddleware(cfg.SecretJWT))
 	invitations := auth.Group("/invitations")
 	{
-		invitations.POST("/:id/accept", AccessRole(models.Work), invitationAcceptHandler(db))
+		// CreateInvitation
 		invitations.POST("/", AccessRole(models.Hire), invitationCreateHandler(db))
+
+		invitations.POST("/:id/accept", AccessRole(models.Work), invitationAcceptHandler(db))
 	}
 	projects := auth.Group("/projects")
 	{
@@ -55,7 +59,14 @@ func apiError(c *gin.Context, code int, obj interface{}) {
 		return
 	}
 
-	switch e := errors.Cause(err).(type) {
+	e := errors.Cause(err)
+
+	switch e {
+	case storage.ErrNotFound, mongo.ErrNoDocuments:
+		code = http.StatusNotFound
+	}
+
+	switch e := e.(type) {
 	case *models.TrackerError:
 		c.JSON(code, e)
 	default:

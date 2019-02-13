@@ -30,16 +30,16 @@ func authMiddleware(secretJWT []byte) gin.HandlerFunc {
 	}
 }
 
-func getUser(c *gin.Context) (out models.User) {
+func getUser(c *gin.Context) (out *models.User) {
 	u, ok := c.Get("user")
 	if !ok {
-		return
+		return &models.User{}
 	}
 	user, ok := u.(*models.User)
 	if !ok {
-		return
+		return &models.User{}
 	}
-	return *user
+	return user
 }
 
 func setUser(c *gin.Context, user *models.User) {

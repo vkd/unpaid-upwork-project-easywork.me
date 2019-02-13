@@ -51,7 +51,7 @@ func userCreateHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
 			apiError(c, http.StatusUnprocessableEntity, &models.UserEmailExists)
 			return
 		}
-		if err != storage.ErrNotFound {
+		if !storage.IsNotFound(err) {
 			apiError(c, http.StatusInternalServerError, errors.Wrapf(err, "error on find user by email (email: %v)", u.Email))
 			return
 		}

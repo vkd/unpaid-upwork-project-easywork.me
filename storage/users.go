@@ -36,6 +36,14 @@ func (s *Storage) UserGetByEmail(ctx context.Context, email string) (*models.Use
 	return &u, nil
 }
 
+// UserGetByIDOrEmail - get user by id or email
+func (s *Storage) UserGetByIDOrEmail(ctx context.Context, uID models.UserID, email string) (*models.User, error) {
+	if len(email) > 0 {
+		return s.UserGetByEmail(ctx, email)
+	}
+	return s.UserGet(ctx, uID)
+}
+
 // UserCreate - create user
 func (s *Storage) UserCreate(ctx context.Context, u *models.UserPassword) (*models.User, error) {
 	if u.Role == "" {

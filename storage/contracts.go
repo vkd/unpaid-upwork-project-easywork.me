@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/mongodb/mongo-go-driver/bson/primitive"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/pkg/errors"
 	"gopkg.in/mgo.v2/bson"
@@ -25,13 +26,13 @@ func (s *Storage) ContractsCreate(ctx context.Context, c *models.Contract) (*mod
 		return nil, errors.Wrapf(err, "error on insert new contract")
 	}
 
-	c.ID = res.InsertedID.(bson.ObjectId)
+	c.ID = res.InsertedID.(primitive.ObjectID)
 
 	return c, nil
 }
 
 // ContractsUpdateStatus - update status of contract
-func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, role models.Role, status models.ContractStatus) error {
+func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, role models.Role, status models.ContractStatus, userID models.UserID) error {
 	c, err := s.ContractGet(ctx, cID, role)
 	if err != nil {
 		return errors.Wrapf(err, "cannot update status of contract (id: %v)", cID)
@@ -47,7 +48,7 @@ func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, 
 		return &models.ContractAlreadySameStatus
 	}
 
-	_, err = s.ProjectGet(ctx, c.ProjectID)
+	_, err = s.ProjectGetByOwner(ctx, c.ProjectID, userID)
 	if err != nil {
 		return errors.Wrapf(err, "cannot update status of contract (id: %v)", c.ID)
 	}
