@@ -61,6 +61,18 @@ func (s *Storage) UserCreate(ctx context.Context, u *models.UserPassword) (*mode
 	return &u.User, nil
 }
 
+// UserDelete - delete user
+func (s *Storage) UserDelete(ctx context.Context, userID models.UserID) error {
+	res, err := s.users().DeleteOne(ctx, bson.M{"_id": userID})
+	if err != nil {
+		return errors.Wrapf(err, "error on delete user (id: %v)", userID)
+	}
+	if res.DeletedCount < 1 {
+		return errors.Errorf("user not deleted (id: %v)", userID)
+	}
+	return nil
+}
+
 func (s *Storage) users() *mongo.Collection {
 	return s.db().Collection("users")
 }

@@ -42,3 +42,23 @@ func contractCreateHandler(db *storage.Storage) gin.HandlerFunc {
 		c.JSON(http.StatusOK, cntr)
 	}
 }
+
+func contractEndHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		cID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		err = db.ContractsUpdateStatus(c, cID, models.Ended, user)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, ContractEnded)
+	}
+}

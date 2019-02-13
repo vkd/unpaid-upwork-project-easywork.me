@@ -33,6 +33,12 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	r.POST("/users", userCreateHandler(db, claimer))
 
 	auth := r.Group("/", authMiddleware(cfg.SecretJWT))
+
+	user := r.Group("/user")
+	{
+		// DeleteUser
+		user.DELETE("/user", userDeleteHandler(db))
+	}
 	invitations := auth.Group("/invitations")
 	{
 		// CreateInvitation
@@ -53,6 +59,7 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 		projects.POST("/", AccessRole(models.Hire), projectCreateHandler(db))
 		projectID := projects.Group("/:id")
 		{
+			// DeleteProject
 			projectID.DELETE("/", AccessRole(models.Hire), projectDeleteHandler(db))
 		}
 	}
@@ -63,6 +70,9 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 
 		contractID := contracts.Group("/:id")
 		{
+			contractID.GET("/dailies", totalDailyHandler(db))
+			// EndContract
+			contractID.POST("/end", AccessRole(models.Hire), contractEndHandler(db))
 			events := contractID.Group("/events")
 			{
 				// CreateContractEvent

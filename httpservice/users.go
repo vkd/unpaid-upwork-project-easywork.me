@@ -88,6 +88,20 @@ func userCreateHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
 	}
 }
 
+func userDeleteHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		err := db.UserDelete(c, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, UserDeleted)
+	}
+}
+
 func IsUsernameValid(username models.UserID) bool {
 	r, _ := regexp.Compile(`^[a-z0-9]+$`)
 	return r.MatchString(string(username))

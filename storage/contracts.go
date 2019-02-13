@@ -12,10 +12,6 @@ import (
 	"gitlab.com/easywork.me/backend/models"
 )
 
-const (
-	colContracts = "contracts"
-)
-
 // ContractsCreate - create contract
 func (s *Storage) ContractsCreate(ctx context.Context, c *models.ContractBase, ownerID models.UserID) (*models.Contract, error) {
 	if c == nil {
@@ -42,6 +38,10 @@ func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID primitive.Objec
 		return errors.Wrapf(err, "cannot update status of contract (id: %v)", cID)
 	}
 
+	if c.Status == models.Ended {
+		return errors.Errorf("contract is ended (id: %v)", cID)
+	}
+
 	if c.Status == status {
 		switch status {
 		case models.Started:
@@ -57,7 +57,7 @@ func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID primitive.Objec
 		return errors.Wrapf(err, "cannot update status of contract (id: %v)", c.ID)
 	}
 
-	res, err := s.contracts().UpdateOne(ctx, bson.M{"_id": cID}, bson.M{"status": status})
+	res, err := s.contracts().UpdateOne(ctx, bson.M{"_id": cID}, bson.M{"$set": bson.M{"status": status}})
 	if err != nil {
 		return errors.Wrapf(err, "error on update status of contract (id: %v)", cID)
 	}
@@ -89,5 +89,5 @@ func (s *Storage) ContractGet(ctx context.Context, cID primitive.ObjectID, user 
 }
 
 func (s *Storage) contracts() *mongo.Collection {
-	return s.c(colContracts)
+	return s.c("contracts")
 }

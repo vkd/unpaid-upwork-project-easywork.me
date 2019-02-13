@@ -8,8 +8,43 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/mongodb/mongo-go-driver/mongo/options"
 	"github.com/pkg/errors"
+	"gitlab.com/easywork.me/backend/models"
 	"gopkg.in/mgo.v2/bson"
 )
+
+// TotalDaily - get total by daily
+func (s *Storage) TotalDaily(ctx context.Context, cID primitive.ObjectID, from, to string) ([]models.Total, error) {
+	filter := bson.M{"contract_id": cID}
+	if from != "" || to != "" {
+		byDate := bson.M{}
+		if from != "" {
+			byDate["$gte"] = from
+		}
+		if to != "" {
+			byDate["$lt"] = to
+		}
+		filter["date"] = byDate
+	}
+
+	var out = []models.Total{}
+
+	cur, err := s.totals().Find(ctx, filter)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error on get daily total (contract_id: %v)", cID.Hex())
+	}
+	for cur.Next(ctx) {
+		var t models.Total
+		err = cur.Decode(&t)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error on decode totals")
+		}
+		out = append(out, t)
+	}
+	if err = cur.Err(); err != nil {
+		return nil, errors.Wrapf(err, "error on cursor of totals result")
+	}
+	return out, nil
+}
 
 // TotalsUpdate - update total value for contract_id by date
 func (s *Storage) TotalsUpdate(ctx context.Context, cID primitive.ObjectID, createdAt time.Time, value int) error {
