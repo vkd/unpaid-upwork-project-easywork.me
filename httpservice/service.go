@@ -37,8 +37,12 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	{
 		// CreateInvitation
 		invitations.POST("/", AccessRole(models.Hire), invitationCreateHandler(db))
-		// AcceptInvitation
-		invitations.POST("/:id/accept", AccessRole(models.Work), invitationAcceptHandler(db))
+		invitationID := invitations.Group("/:id")
+		{
+			// AcceptInvitation
+			invitationID.POST("/accept", AccessRole(models.Work), invitationAcceptHandler(db))
+			invitationID.POST("/decline", AccessRole(models.Work), invitationDeclineHandler(db))
+		}
 	}
 	projects := auth.Group("/projects")
 	{

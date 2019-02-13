@@ -64,6 +64,10 @@ func (s *Storage) InvitationUpdateStatus(ctx context.Context, iID primitive.Obje
 		return nil, &models.AccessForbidden
 	}
 
+	if i.Status != models.InvitationStatusPending {
+		return nil, errors.Errorf("allow change only 'pending' status")
+	}
+
 	res, err := s.invitations().UpdateOne(ctx, bson.M{"_id": iID}, bson.M{"$set": bson.M{"status": status}})
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on update status on invitation (id: %v)", iID)

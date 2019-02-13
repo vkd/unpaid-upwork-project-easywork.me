@@ -63,3 +63,23 @@ func invitationAcceptHandler(db *storage.Storage) gin.HandlerFunc {
 		})
 	}
 }
+
+func invitationDeclineHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		invID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		_, err = db.InvitationUpdateStatus(c, invID, user.ID, models.InvitationStatusDeclined)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, InvitationDeclined)
+	}
+}
