@@ -36,7 +36,6 @@ const (
 func NewContractBase() *ContractBase {
 	var c ContractBase
 	c.Status = NotStarted
-	c.CreatedDateTime = time.Now()
 	return &c
 }
 

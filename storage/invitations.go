@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson/primitive"
 	"github.com/mongodb/mongo-go-driver/mongo"
@@ -40,7 +41,7 @@ func (s *Storage) InvitationCreate(ctx context.Context, inv *models.InvitationBa
 	inv = inv.PreCreate()
 	inv.OwnerID = userID
 	inv.TermsID = tms.ID
-
+	inv.CreatedDateTime = time.Now()
 	res, err := s.invitations().InsertOne(ctx, inv)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on create invitation")

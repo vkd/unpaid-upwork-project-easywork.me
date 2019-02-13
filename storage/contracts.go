@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson/primitive"
 	"github.com/mongodb/mongo-go-driver/mongo"
@@ -22,6 +23,7 @@ func (s *Storage) ContractsCreate(ctx context.Context, c *models.ContractBase, o
 	}
 
 	c.OwnerID = ownerID
+	c.CreatedDateTime = time.Now()
 	res, err := s.contracts().InsertOne(ctx, c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on insert new contract")
@@ -34,8 +36,8 @@ func (s *Storage) ContractsCreate(ctx context.Context, c *models.ContractBase, o
 }
 
 // ContractsUpdateStatus - update status of contract
-func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, role models.Role, status models.ContractStatus, userID models.UserID) error {
-	c, err := s.ContractGet(ctx, cID, role)
+func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID primitive.ObjectID, status models.ContractStatus, user *models.User) error {
+	c, err := s.ContractGet(ctx, cID, user)
 	if err != nil {
 		return errors.Wrapf(err, "cannot update status of contract (id: %v)", cID)
 	}
@@ -50,7 +52,7 @@ func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, 
 		return &models.ContractAlreadySameStatus
 	}
 
-	_, err = s.ProjectGetByOwner(ctx, c.ProjectID, userID)
+	_, err = s.ProjectGetByOwner(ctx, c.ProjectID, user.ID)
 	if err != nil {
 		return errors.Wrapf(err, "cannot update status of contract (id: %v)", c.ID)
 	}
@@ -65,10 +67,21 @@ func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID bson.ObjectId, 
 	return nil
 }
 
-func (s *Storage) ContractGet(ctx context.Context, cID bson.ObjectId, role models.Role) (*models.Contract, error) {
-	panic("Not implemented - auth depends, with join")
+// ContractGet - get contract
+func (s *Storage) ContractGet(ctx context.Context, cID primitive.ObjectID, user *models.User) (*models.Contract, error) {
+	filter := bson.M{"_id": cID}
+
+	switch user.Role {
+	case models.Work:
+		filter["contractor_id"] = user.ID
+	case models.Hire:
+		filter["owner_id"] = user.ID
+	default:
+		return nil, errors.Errorf("unsupported user role: %q", user.Role)
+	}
+
 	var c models.Contract
-	err := s.contracts().FindOne(ctx, bson.M{"_id": cID}).Decode(&c)
+	err := s.contracts().FindOne(ctx, filter).Decode(&c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on get contract (id: %v)", cID)
 	}

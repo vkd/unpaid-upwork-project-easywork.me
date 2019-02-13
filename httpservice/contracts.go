@@ -9,7 +9,7 @@ import (
 	"gitlab.com/easywork.me/backend/storage"
 )
 
-func contractsCreateHandler(db *storage.Storage) gin.HandlerFunc {
+func contractCreateHandler(db *storage.Storage) gin.HandlerFunc {
 	type InvitationIdRequest struct {
 		InvitationId primitive.ObjectID `json:"invitation_id"`
 	}

@@ -33,6 +33,5 @@ const InvitationStatusDeclined InvitationStatus = "declined"
 
 func (i *InvitationBase) PreCreate() *InvitationBase {
 	i.Status = InvitationStatusPending
-	i.CreatedDateTime = time.Now()
 	return i
 }

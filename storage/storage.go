@@ -53,21 +53,23 @@ func (s *Storage) c(name string) *mongo.Collection {
 func (s *Storage) initCreateIndexes(ctx context.Context) error {
 	type fs map[string]int
 	for _, i := range []struct {
-		db       string
-		col      string
+		name     string
+		col      *mongo.Collection
 		fields   fs
 		isUnique bool
-	}{} {
-		err := s.createIndex(ctx, i.db, i.col, i.fields, i.isUnique)
+	}{
+		{"totals", s.totals(), fs{"contract_id": 1, "date": 1}, true},
+	} {
+		err := s.createIndex(ctx, i.col, i.fields, i.isUnique)
 		if err != nil {
-			return errors.Wrapf(err, "error on create index (%s.%s)", i.db, i.col)
+			return errors.Wrapf(err, "error on create index (%s)", i.name)
 		}
 	}
 	return nil
 }
 
-func (s *Storage) createIndex(ctx context.Context, db string, col string, fields map[string]int, isUnique bool) error {
-	_, err := s.client.Database(db).Collection(col).Indexes().CreateOne(ctx, makeIndexModel(fields, isUnique))
+func (s *Storage) createIndex(ctx context.Context, col *mongo.Collection, fields map[string]int, isUnique bool) error {
+	_, err := col.Indexes().CreateOne(ctx, makeIndexModel(fields, isUnique))
 	return err
 }
 

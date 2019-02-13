@@ -22,7 +22,6 @@ type TermsSetBase struct {
 }
 
 func (t *TermsSetBase) PreCreate() *TermsSetBase {
-	t.CreatedDateTime = time.Now()
 	if t.Currency == "" {
 		t.Currency = EUR
 	}
