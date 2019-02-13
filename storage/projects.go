@@ -35,6 +35,18 @@ func (s *Storage) ProjectCreate(ctx context.Context, p *models.ProjectBase, uID 
 	return &out, nil
 }
 
+// ProjectDelete - delete project
+func (s *Storage) ProjectDelete(ctx context.Context, pID primitive.ObjectID, userID models.UserID) error {
+	res, err := s.projects().DeleteOne(ctx, bson.M{"_id": pID, "owner_id": userID})
+	if err != nil {
+		return errors.Wrapf(err, "error on delete project (id: %v)", pID)
+	}
+	if res.DeletedCount < 1 {
+		return errors.Errorf("project is not deleted (id: %v)", pID)
+	}
+	return nil
+}
+
 func (s *Storage) projects() *mongo.Collection {
 	return s.db().Collection("projects")
 }

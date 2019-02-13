@@ -85,6 +85,36 @@ func (s *Storage) InvitationGet(ctx context.Context, iID primitive.ObjectID, own
 	return s.invitationGet(ctx, iID, ownerID)
 }
 
+func (s *Storage) InvitationDelete(ctx context.Context, iID primitive.ObjectID, userID models.UserID) error {
+	i, err := s.invitationGet(ctx, iID, userID)
+	if err != nil {
+		return errors.Wrapf(err, "error on get invitation (id: %s)", iID)
+	}
+
+	if i.Status != models.InvitationStatusPending {
+		return errors.Errorf("not allow to delete %q status (only: 'pending')", i.Status)
+	}
+
+	_, err = s.ProjectGetByOwner(ctx, i.ProjectID, userID)
+	if err != nil {
+		return errors.Wrapf(err, "error on get project (id: %v)", i.ProjectID)
+	}
+
+	err = s.TermsDelete(ctx, i.TermsID)
+	if err != nil {
+		return errors.Wrapf(err, "error on delete term (id: %v)", i.TermsID)
+	}
+
+	res, err := s.invitations().DeleteOne(ctx, bson.M{"_id": iID})
+	if err != nil {
+		return errors.Wrapf(err, "error on delete invitation (id: %v)", iID)
+	}
+	if res.DeletedCount < 1 {
+		return errors.Errorf("invitation is not deleted (id: %v)", iID)
+	}
+	return nil
+}
+
 func (s *Storage) invitationGet(ctx context.Context, iID primitive.ObjectID, ownerID ...models.UserID) (*models.Invitation, error) {
 	filter := bson.M{"_id": iID}
 	if len(ownerID) > 0 {

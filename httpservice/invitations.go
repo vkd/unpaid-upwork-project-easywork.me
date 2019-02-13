@@ -83,3 +83,23 @@ func invitationDeclineHandler(db *storage.Storage) gin.HandlerFunc {
 		c.JSON(http.StatusOK, InvitationDeclined)
 	}
 }
+
+func invitationDeleteHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		invID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		err = db.InvitationDelete(c, invID, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, InvitationDeleted)
+	}
+}

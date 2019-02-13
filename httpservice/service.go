@@ -41,13 +41,20 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 		{
 			// AcceptInvitation
 			invitationID.POST("/accept", AccessRole(models.Work), invitationAcceptHandler(db))
+			// DeclineInvitation
 			invitationID.POST("/decline", AccessRole(models.Work), invitationDeclineHandler(db))
+			// DeleteInvitation
+			invitationID.DELETE("/", AccessRole(models.Hire), invitationDeleteHandler(db))
 		}
 	}
 	projects := auth.Group("/projects")
 	{
 		// CreateProject
 		projects.POST("/", AccessRole(models.Hire), projectCreateHandler(db))
+		projectID := projects.Group("/:id")
+		{
+			projectID.DELETE("/", AccessRole(models.Hire), projectDeleteHandler(db))
+		}
 	}
 	contracts := auth.Group("/contracts")
 	{

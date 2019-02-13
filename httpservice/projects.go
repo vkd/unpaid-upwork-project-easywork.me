@@ -27,3 +27,23 @@ func projectCreateHandler(db *storage.Storage) gin.HandlerFunc {
 		c.JSON(http.StatusOK, p)
 	}
 }
+
+func projectDeleteHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		pID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		err = db.ProjectDelete(c, pID, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, ProjectDeleted)
+	}
+}
