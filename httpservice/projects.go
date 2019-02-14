@@ -8,6 +8,40 @@ import (
 	"gitlab.com/easywork.me/backend/storage"
 )
 
+func projectsGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		ps, err := db.ProjectsGet(c, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, ps)
+	}
+}
+
+func projectGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		projectID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		proj, err := db.ProjectGetByOwner(c, projectID, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, proj)
+	}
+}
+
 func projectCreateHandler(db *storage.Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := getUser(c)

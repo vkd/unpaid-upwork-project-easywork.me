@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"log"
 
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/pkg/errors"
@@ -13,6 +14,7 @@ import (
 // UserGet - get user
 func (s *Storage) UserGet(ctx context.Context, uID models.UserID) (*models.User, error) {
 	var u models.User
+	log.Printf("userID: %v", uID)
 	err := s.users().FindOne(ctx, bson.M{"id": uID}).Decode(&u)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -21,6 +23,30 @@ func (s *Storage) UserGet(ctx context.Context, uID models.UserID) (*models.User,
 		return nil, errors.Wrapf(err, "error on get user (id: %v)", uID)
 	}
 	return &u, nil
+}
+
+func (s *Storage) UsersGetPublic(ctx context.Context) ([]models.PublicUser, error) {
+	var out = []models.PublicUser{}
+
+	cur, err := s.users().Find(ctx, bson.M{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "error on get users")
+	}
+
+	for cur.Next(ctx) {
+		var u models.PublicUser
+		err = cur.Decode(&u)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error on decode user")
+		}
+		out = append(out, u)
+	}
+
+	if err = cur.Err(); err != nil {
+		return nil, errors.Wrapf(err, "error on iterate users")
+	}
+
+	return out, nil
 }
 
 // UserGetByEmail - get user by email

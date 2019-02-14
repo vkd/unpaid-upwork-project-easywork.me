@@ -9,6 +9,40 @@ import (
 	"gitlab.com/easywork.me/backend/storage"
 )
 
+func contractsGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		cs, err := db.ContractsGet(c, user)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, cs)
+	}
+}
+
+func contractGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		cID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		contract, err := db.ContractGet(c, cID, user)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, contract)
+	}
+}
+
 func contractCreateHandler(db *storage.Storage) gin.HandlerFunc {
 	type InvitationIdRequest struct {
 		InvitationId primitive.ObjectID `json:"invitation_id"`

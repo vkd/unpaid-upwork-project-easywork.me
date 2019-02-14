@@ -38,3 +38,9 @@ func CheckRole(r Role) error {
 	}
 	return errors.Errorf("wrong user role (%q)", r)
 }
+
+type PublicUser struct {
+	ID    UserID `json:"id,omitempty" bson:"id"`
+	Email string `json:"email,omitempty" bson:"email"`
+	Role  Role   `json:"role" bson:"role"`
+}

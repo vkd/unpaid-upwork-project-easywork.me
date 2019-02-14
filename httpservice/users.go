@@ -10,6 +10,32 @@ import (
 	"gitlab.com/easywork.me/backend/storage"
 )
 
+func usersGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		us, err := db.UsersGetPublic(c)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, us)
+	}
+}
+
+func userGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		u, err := db.UserGet(c, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, u)
+	}
+}
+
 func userCreateHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
 	type UserData struct {
 		ID        models.UserID `json:"id" db:"id"`

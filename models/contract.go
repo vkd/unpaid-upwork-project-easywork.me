@@ -18,9 +18,10 @@ type ContractBase struct {
 	ProjectID primitive.ObjectID `json:"project_id" bson:"project_id"`
 	// ProjectTitle       string             `json:"project_title" bson:"project_title"`
 	// ProjectDescription string             `json:"project_description" bson:"project_description"`
-	ContractorID    UserID             `json:"contractor_id" bson:"contractor_id"`
-	OwnerID         UserID             `json:"owner_id" bson:"owner_id"`
-	TermsID         primitive.ObjectID `json:"terms_id" bson:"terms_id"`
+	ContractorID UserID `json:"contractor_id" bson:"contractor_id"`
+	OwnerID      UserID `json:"owner_id" bson:"owner_id"`
+	// TermsID         primitive.ObjectID `json:"terms_id" bson:"terms_id"`
+	InvitationID    primitive.ObjectID `json:"invitation_id" bson:"invitation_id"`
 	CreatedDateTime time.Time          `json:"created_date_time" bson:"created_date_time"`
 }
 
@@ -42,6 +43,7 @@ func NewContractBase() *ContractBase {
 func (c *ContractBase) FromInvitation(i *Invitation) *ContractBase {
 	c.ProjectID = i.ProjectID
 	c.ContractorID = i.InviteeID
-	c.TermsID = i.TermsID
+	// c.TermsID = i.TermsID
+	c.InvitationID = i.ID
 	return c
 }

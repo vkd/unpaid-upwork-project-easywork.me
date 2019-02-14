@@ -12,6 +12,40 @@ import (
 	"gitlab.com/easywork.me/backend/models"
 )
 
+func (s *Storage) ContractsGet(ctx context.Context, user *models.User) ([]models.Contract, error) {
+	var out = []models.Contract{}
+
+	filter := bson.M{}
+	switch user.Role {
+	case models.Work:
+		filter["contractor_id"] = user.ID
+	case models.Hire:
+		filter["owner_id"] = user.ID
+	default:
+		return nil, errors.Errorf("unsupported user role: %q", user.Role)
+	}
+
+	cur, err := s.contracts().Find(ctx, filter)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error on get contracts")
+	}
+
+	for cur.Next(ctx) {
+		var c models.Contract
+		err = cur.Decode(&c)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error on decode contract")
+		}
+		out = append(out, c)
+	}
+
+	if err = cur.Err(); err != nil {
+		return nil, errors.Wrapf(err, "error on iterate contracts")
+	}
+
+	return out, nil
+}
+
 // ContractsCreate - create contract
 func (s *Storage) ContractsCreate(ctx context.Context, c *models.ContractBase, ownerID models.UserID) (*models.Contract, error) {
 	if c == nil {

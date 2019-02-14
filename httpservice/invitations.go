@@ -9,6 +9,40 @@ import (
 	"gitlab.com/easywork.me/backend/storage"
 )
 
+func invitationsGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		invs, err := db.InvitationsGet(c, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, invs)
+	}
+}
+
+func invitationGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		iID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		inv, err := db.InvitationGet(c, iID, user.ID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, inv)
+	}
+}
+
 func invitationCreateHandler(db *storage.Storage) gin.HandlerFunc {
 	type InvitationCreate struct {
 		models.InvitationBase

@@ -29,59 +29,56 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 
 	claimer := &claimCreator{secret: cfg.SecretJWT}
 
-	// CreateUser
 	r.POST("/users", userCreateHandler(db, claimer))
 
 	auth := r.Group("/", authMiddleware(cfg.SecretJWT))
 
-	user := r.Group("/user")
+	user := auth.Group("/user")
 	{
-		// DeleteUser
-		user.DELETE("/user", userDeleteHandler(db))
+		user.GET("/", userGetHandler(db))
+		user.DELETE("/", userDeleteHandler(db))
+	}
+	users := auth.Group("/users")
+	{
+		users.GET("/", usersGetHandler(db))
 	}
 	invitations := auth.Group("/invitations")
 	{
-		// CreateInvitation
+		invitations.GET("/", invitationsGetHandler(db))
 		invitations.POST("/", AccessRole(models.Hire), invitationCreateHandler(db))
 		invitationID := invitations.Group("/:id")
 		{
-			// AcceptInvitation
+			invitationID.GET("/", invitationGetHandler(db))
 			invitationID.POST("/accept", AccessRole(models.Work), invitationAcceptHandler(db))
-			// DeclineInvitation
 			invitationID.POST("/decline", AccessRole(models.Work), invitationDeclineHandler(db))
-			// DeleteInvitation
 			invitationID.DELETE("/", AccessRole(models.Hire), invitationDeleteHandler(db))
 		}
 	}
 	projects := auth.Group("/projects")
 	{
-		// CreateProject
+		projects.GET("/", projectsGetHandler(db))
 		projects.POST("/", AccessRole(models.Hire), projectCreateHandler(db))
 		projectID := projects.Group("/:id")
 		{
-			// DeleteProject
+			projectID.GET("/", projectGetHandler(db))
 			projectID.DELETE("/", AccessRole(models.Hire), projectDeleteHandler(db))
 		}
 	}
 	contracts := auth.Group("/contracts")
 	{
-		// CreateContract
+		contracts.GET("/", contractsGetHandler(db))
 		contracts.POST("/", AccessRole(models.Hire), contractCreateHandler(db))
 
 		contractID := contracts.Group("/:id")
 		{
-			// GetContractDailiesById
+			contractID.GET("/", contractGetHandler(db))
 			contractID.GET("/dailies", totalDailyHandler(db))
-			// GetContractTotalsById
 			contractID.GET("/totals", totalsGetHandler(db))
-			// EndContract
 			contractID.POST("/end", AccessRole(models.Hire), contractEndHandler(db))
 
 			events := contractID.Group("/events")
 			{
-				// GetContractEventsById
 				events.GET("/", eventsGetHandler(db))
-				// CreateContractEvent
 				events.POST("/:type", AccessRole(models.Work), eventCreateHandler(db))
 			}
 		}

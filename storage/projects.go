@@ -11,6 +11,31 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+// ProjectsGet - get projects
+func (s *Storage) ProjectsGet(ctx context.Context, userID models.UserID) ([]models.Project, error) {
+	var out = []models.Project{}
+
+	cur, err := s.projects().Find(ctx, bson.M{"owner_id": userID})
+	if err != nil {
+		return nil, errors.Wrapf(err, "error on get projects")
+	}
+
+	for cur.Next(ctx) {
+		var p models.Project
+		err = cur.Decode(&p)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error on decode project")
+		}
+		out = append(out, p)
+	}
+
+	if err = cur.Err(); err != nil {
+		return nil, errors.Wrapf(err, "error on iterate projects")
+	}
+
+	return out, nil
+}
+
 // ProjectGetByOwner - get project
 func (s *Storage) ProjectGetByOwner(ctx context.Context, pID primitive.ObjectID, userID models.UserID) (*models.Project, error) {
 	var p models.Project

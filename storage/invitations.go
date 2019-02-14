@@ -11,6 +11,30 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+func (s *Storage) InvitationsGet(ctx context.Context, userID models.UserID) ([]models.Invitation, error) {
+	var out = []models.Invitation{}
+
+	cur, err := s.invitations().Find(ctx, bson.M{"owner_id": userID})
+	if err != nil {
+		return nil, errors.Wrapf(err, "error on get invitations")
+	}
+
+	for cur.Next(ctx) {
+		var i models.Invitation
+		err = cur.Decode(&i)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error on decode invitation object")
+		}
+		out = append(out, i)
+	}
+
+	if err = cur.Err(); err != nil {
+		return nil, errors.Wrapf(err, "error on iterate over invitations")
+	}
+
+	return out, nil
+}
+
 // InvitationCreate - create invitation
 func (s *Storage) InvitationCreate(ctx context.Context, inv *models.InvitationBase, userID models.UserID) (*models.Invitation, error) {
 	proj, err := s.ProjectGetByOwner(ctx, inv.ProjectID, userID)

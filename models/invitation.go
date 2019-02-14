@@ -20,7 +20,7 @@ type InvitationBase struct {
 
 	ProjectID    primitive.ObjectID `json:"project_id" bson:"project_id"`
 	InviteeEmail string             `json:"invitee_email"`
-	TermsID      primitive.ObjectID `json:"terms_id" bson:"terms_id"`
+	// TermsID      primitive.ObjectID `json:"terms_id" bson:"terms_id"`
 
 	CreatedDateTime time.Time `json:"created_date_time" bson:"created_date_time"`
 
