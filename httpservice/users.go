@@ -8,7 +8,30 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/easywork.me/backend/models"
 	"gitlab.com/easywork.me/backend/storage"
+	"golang.org/x/crypto/bcrypt"
 )
+
+func profileUpdateHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		var j models.UserProfile
+		if err := c.ShouldBindJSON(&j); err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		err := db.UserUpdateProfile(c, user.ID, &j)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+		})
+	}
+}
 
 func usersGetHandler(db *storage.Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -33,6 +56,51 @@ func userGetHandler(db *storage.Storage) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, u)
+	}
+}
+
+func userLoginHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
+	type Login struct {
+		Email    string `json:"email" db:"email"`
+		Password string `json:"password" db:"password"`
+	}
+	return func(c *gin.Context) {
+		var j Login
+		if err := c.ShouldBindJSON(&j); err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		if j.Email == "" || j.Password == "" {
+			apiError(c, http.StatusBadRequest, &models.PayloadValidationError)
+			return
+		}
+
+		u, err := db.UserPasswordGetByEmail(c, j.Email)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(j.Password))
+		if err != nil {
+			apiError(c, http.StatusUnauthorized, &models.WrongEmailOrPassword)
+			return
+		}
+
+		token, err := cc.CreateClaim(&u.User)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, struct {
+			models.User
+			Token string `json:"token"`
+		}{
+			User:  u.User,
+			Token: token,
+		})
 	}
 }
 
@@ -84,11 +152,13 @@ func userCreateHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
 
 		user := models.UserPassword{
 			User: models.User{
-				ID:        u.ID,
-				Email:     u.Email,
-				FirstName: u.FirstName,
-				LastName:  u.LastName,
-				Role:      u.UserType,
+				ID:    u.ID,
+				Email: u.Email,
+				UserProfile: models.UserProfile{
+					FirstName: u.FirstName,
+					LastName:  u.LastName,
+				},
+				Role: u.UserType,
 			},
 			Password: u.Password,
 		}
@@ -114,6 +184,36 @@ func userCreateHandler(db *storage.Storage, cc ClaimCreator) gin.HandlerFunc {
 	}
 }
 
+func changePasswordHandler(db *storage.Storage) gin.HandlerFunc {
+	type Password struct {
+		Password string `json:"password"`
+	}
+	return func(c *gin.Context) {
+		user := getUser(c)
+
+		var j Password
+		if err := c.ShouldBindJSON(&j); err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		if j.Password == "" {
+			apiError(c, http.StatusBadRequest, errors.Errorf("password is empty"))
+			return
+		}
+
+		err := db.UserPasswordUpdate(c, user.ID, j.Password)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+		})
+	}
+}
+
 func userDeleteHandler(db *storage.Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := getUser(c)
@@ -125,6 +225,31 @@ func userDeleteHandler(db *storage.Storage) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, UserDeleted)
+	}
+}
+
+func tokensVerifyHandler(db *storage.Storage, secret []byte) gin.HandlerFunc {
+	type Token struct {
+		Value string `json:"value"`
+	}
+	return func(c *gin.Context) {
+		var j Token
+		if err := c.ShouldBindJSON(&j); err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		user, err := VerifyTokenString(j.Value, secret)
+		if err != nil {
+			apiError(c, http.StatusBadRequest, &models.JwtTokenParseError)
+			return
+		}
+		if user == nil {
+			apiError(c, http.StatusUnauthorized, &models.JwtTokenParseError)
+			return
+		}
+
+		c.JSON(http.StatusOK, user)
 	}
 }
 

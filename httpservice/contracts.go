@@ -78,6 +78,16 @@ func contractCreateHandler(db *storage.Storage) gin.HandlerFunc {
 }
 
 func contractEndHandler(db *storage.Storage) gin.HandlerFunc {
+	return contractChangeStatusHandler(db, models.Ended)
+}
+func contractPauseHandler(db *storage.Storage) gin.HandlerFunc {
+	return contractChangeStatusHandler(db, models.Paused)
+}
+func contractResumeHandler(db *storage.Storage) gin.HandlerFunc {
+	return contractChangeStatusHandler(db, models.Started, ContractResumed)
+}
+
+func contractChangeStatusHandler(db *storage.Storage, status models.ContractStatus, outs ...interface{}) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := getUser(c)
 
@@ -87,12 +97,28 @@ func contractEndHandler(db *storage.Storage) gin.HandlerFunc {
 			return
 		}
 
-		err = db.ContractsUpdateStatus(c, cID, models.Ended, user)
+		err = db.ContractsUpdateStatus(c, cID, status, user)
 		if err != nil {
 			apiError(c, http.StatusInternalServerError, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, ContractEnded)
+		var out interface{}
+		switch status {
+		case models.Ended:
+			out = ContractEnded
+		case models.Paused:
+			out = ContractPaused
+		case models.Started:
+			out = ContractStarted
+		default:
+			out = gin.H{"message": "status changed"}
+		}
+
+		if len(outs) > 0 {
+			out = outs[0]
+		}
+
+		c.JSON(http.StatusOK, out)
 	}
 }

@@ -29,18 +29,28 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 
 	claimer := &claimCreator{secret: cfg.SecretJWT}
 
+	r.GET("/status", statusHandler(db))
 	r.POST("/users", userCreateHandler(db, claimer))
+	r.POST("/user/login", userLoginHandler(db, claimer))
 
-	auth := r.Group("/", authMiddleware(cfg.SecretJWT))
+	authMid := authMiddleware(cfg.SecretJWT)
+
+	auth := r.Group("/", authMid)
+	auth.PATCH("/profile", profileUpdateHandler(db))
 
 	user := auth.Group("/user")
 	{
 		user.GET("/", userGetHandler(db))
+		user.PATCH("/password", changePasswordHandler(db))
 		user.DELETE("/", userDeleteHandler(db))
 	}
 	users := auth.Group("/users")
 	{
 		users.GET("/", usersGetHandler(db))
+	}
+	tokens := auth.Group("/tokens")
+	{
+		tokens.POST("/verify", tokensVerifyHandler(db, cfg.SecretJWT))
 	}
 	invitations := auth.Group("/invitations")
 	{
@@ -74,7 +84,10 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 			contractID.GET("/", contractGetHandler(db))
 			contractID.GET("/dailies", totalDailyHandler(db))
 			contractID.GET("/totals", totalsGetHandler(db))
-			contractID.POST("/end", AccessRole(models.Hire), contractEndHandler(db))
+
+			contractID.POST("/end", contractEndHandler(db))
+			contractID.POST("/pause", contractPauseHandler(db))
+			contractID.POST("/resume", contractResumeHandler(db))
 
 			events := contractID.Group("/events")
 			{
@@ -88,8 +101,21 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	return r.Run(cfg.Addr)
 }
 
+func statusHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+		})
+	}
+}
+
 func apiError(c *gin.Context, code int, obj interface{}) {
 	c.Abort()
+
+	if obj == nil {
+		c.JSON(code, gin.H{"error": "unknown error"})
+		return
+	}
 
 	err, ok := obj.(error)
 	if !ok {

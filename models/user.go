@@ -9,13 +9,17 @@ type User struct {
 	Email string `json:"email,omitempty" bson:"email"`
 	Role  Role   `json:"role" bson:"role"`
 
-	FirstName string `json:"first_name" bson:"first_name"`
-	LastName  string `json:"last_name" bson:"last_name"`
+	UserProfile `bson:"inline"`
 }
 
 type UserPassword struct {
 	User     `bson:"inline"`
 	Password string `json:"password" bson:"password"`
+}
+
+type UserProfile struct {
+	FirstName string `json:"first_name" bson:"first_name"`
+	LastName  string `json:"last_name" bson:"last_name"`
 }
 
 func NewUser() *User {
