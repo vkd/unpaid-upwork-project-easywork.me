@@ -12,7 +12,6 @@ import (
 func invitationCreateHandler(db *storage.Storage) gin.HandlerFunc {
 	type InvitationCreate struct {
 		models.InvitationBase
-		models.TermsSetBase
 	}
 	return func(c *gin.Context) {
 		user := getUser(c)
@@ -24,7 +23,12 @@ func invitationCreateHandler(db *storage.Storage) gin.HandlerFunc {
 			return
 		}
 
-		inv, err := db.InvitationCreate(c, &j.InvitationBase, &j.TermsSetBase, user.ID)
+		if err = j.TermsBase.Validate(); err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		inv, err := db.InvitationCreate(c, &j.InvitationBase, user.ID)
 		if err != nil {
 			apiError(c, http.StatusInternalServerError, err)
 			return

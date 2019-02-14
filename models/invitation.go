@@ -23,6 +23,8 @@ type InvitationBase struct {
 	TermsID      primitive.ObjectID `json:"terms_id" bson:"terms_id"`
 
 	CreatedDateTime time.Time `json:"created_date_time" bson:"created_date_time"`
+
+	TermsBase `bson:"inline"`
 }
 
 type InvitationStatus string
@@ -33,5 +35,6 @@ const InvitationStatusDeclined InvitationStatus = "declined"
 
 func (i *InvitationBase) PreCreate() *InvitationBase {
 	i.Status = InvitationStatusPending
+	i.TermsBase = *i.TermsBase.PreCreate()
 	return i
 }

@@ -24,7 +24,7 @@ func CheckEventType(et EventType) error {
 }
 
 type Event struct {
-	ID primitive.ObjectID `json:"id" bson:"id"`
+	ID primitive.ObjectID `json:"id" bson:"_id"`
 
 	EventBase `bson:"inline"`
 }

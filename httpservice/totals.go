@@ -35,3 +35,44 @@ func totalDailyHandler(db *storage.Storage) gin.HandlerFunc {
 		c.JSON(http.StatusOK, out)
 	}
 }
+
+func totalsGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		contractID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		l24h, err := db.EventsGetCountLogsLast24H(c, contractID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		week, err := db.EventsGetCountLogsCurrentWeek(c, contractID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		prev, err := db.EventsGetCountLogsPrevWeek(c, contractID)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		all, err := db.EventsGetCountLogs(c, contractID, nil, nil)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"last_24_hours": l24h * ValuePerEvent,
+			"current_week":  week * ValuePerEvent,
+			"previous_week": prev * ValuePerEvent,
+			"since_start":   all * ValuePerEvent,
+		})
+	}
+}

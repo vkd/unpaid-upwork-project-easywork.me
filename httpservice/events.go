@@ -17,6 +17,44 @@ const (
 	ValuePerEvent = 10
 )
 
+func eventsGetHandler(db *storage.Storage) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cID, err := ObjectIDParam(c, "id")
+		if err != nil {
+			apiError(c, http.StatusBadRequest, err)
+			return
+		}
+
+		var from *time.Time
+		if s := c.Query("from"); s != "" {
+			t, err := time.Parse("2006-01-02", s)
+			if err != nil {
+				apiError(c, http.StatusBadRequest, err)
+				return
+			}
+			from = &t
+		}
+
+		var to *time.Time
+		if s := c.Query("to"); s != "" {
+			t, err := time.Parse("2006-01-02", s)
+			if err != nil {
+				apiError(c, http.StatusBadRequest, err)
+				return
+			}
+			to = &t
+		}
+
+		out, err := db.EventsGet(c, cID, nil, from, to)
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, out)
+	}
+}
+
 func eventCreateHandler(db *storage.Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := getUser(c)
@@ -43,10 +81,13 @@ func eventCreateHandler(db *storage.Storage) gin.HandlerFunc {
 		e.ContractID = contractID
 		e.EventType = eventType
 		e.Title = c.Request.FormValue("title")
+
 		if e.ScreenshotFilename == "" {
-			e.ScreenshotFilename = strconv.FormatInt(time.Now().Unix(), 10) + "HH24MISS.jpg"
+			e.ScreenshotFilename = time.Now().Format("150405") + ".jpg"
 		}
 		e.CreatedDateTime = time.Now()
+		dayFolder := e.CreatedDateTime.Format("2006-01-02")
+		e.ScreenshotUrl = fmt.Sprintf(`https://s3-us-west-2.amazonaws.com/hourly-tracker/%s/%s/%s/%s`, user.ID, contractID.Hex(), dayFolder, e.ScreenshotFilename)
 
 		if eventType == models.EventLog {
 			e.KeyboardEventsCount, err = strconv.Atoi(c.Request.FormValue("keyboard_events_count"))
@@ -60,11 +101,7 @@ func eventCreateHandler(db *storage.Storage) gin.HandlerFunc {
 				return
 			}
 
-			dayFolder := e.CreatedDateTime.Format("2006-01-02")
-			key := fmt.Sprintf(`%s/%s/%s/%s`, user.ID, contractID.Hex(), dayFolder, e.ScreenshotFilename)
-			e.ScreenshotUrl = key
 		}
-
 		event, err := db.EventCreate(c, e, user)
 		if err != nil {
 			apiError(c, http.StatusInternalServerError, err)
@@ -88,10 +125,12 @@ func eventCreateHandler(db *storage.Storage) gin.HandlerFunc {
 			}
 		}
 
-		err = db.TotalsUpdate(c, contractID, event.CreatedDateTime, ValuePerEvent)
-		if err != nil {
-			apiError(c, http.StatusInternalServerError, err)
-			return
+		if eventType == models.EventLog {
+			err = db.TotalsUpdate(c, contractID, event.CreatedDateTime, ValuePerEvent)
+			if err != nil {
+				apiError(c, http.StatusInternalServerError, err)
+				return
+			}
 		}
 
 		c.JSON(http.StatusOK, event)

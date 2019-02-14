@@ -70,11 +70,17 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 
 		contractID := contracts.Group("/:id")
 		{
+			// GetContractDailiesById
 			contractID.GET("/dailies", totalDailyHandler(db))
+			// GetContractTotalsById
+			contractID.GET("/totals", totalsGetHandler(db))
 			// EndContract
 			contractID.POST("/end", AccessRole(models.Hire), contractEndHandler(db))
+
 			events := contractID.Group("/events")
 			{
+				// GetContractEventsById
+				events.GET("/", eventsGetHandler(db))
 				// CreateContractEvent
 				events.POST("/:type", AccessRole(models.Work), eventCreateHandler(db))
 			}

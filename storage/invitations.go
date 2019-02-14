@@ -12,7 +12,7 @@ import (
 )
 
 // InvitationCreate - create invitation
-func (s *Storage) InvitationCreate(ctx context.Context, inv *models.InvitationBase, tmsb *models.TermsSetBase, userID models.UserID) (*models.Invitation, error) {
+func (s *Storage) InvitationCreate(ctx context.Context, inv *models.InvitationBase, userID models.UserID) (*models.Invitation, error) {
 	proj, err := s.ProjectGetByOwner(ctx, inv.ProjectID, userID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invitation not created")
@@ -33,14 +33,8 @@ func (s *Storage) InvitationCreate(ctx context.Context, inv *models.InvitationBa
 		return nil, &models.UserCannotBeInvitedToHisOwnProject
 	}
 
-	tms, err := s.TermsCreate(ctx, tmsb)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error on create terms set")
-	}
-
 	inv = inv.PreCreate()
 	inv.OwnerID = userID
-	inv.TermsID = tms.ID
 	inv.CreatedDateTime = time.Now()
 	res, err := s.invitations().InsertOne(ctx, inv)
 	if err != nil {
@@ -100,10 +94,10 @@ func (s *Storage) InvitationDelete(ctx context.Context, iID primitive.ObjectID, 
 		return errors.Wrapf(err, "error on get project (id: %v)", i.ProjectID)
 	}
 
-	err = s.TermsDelete(ctx, i.TermsID)
-	if err != nil {
-		return errors.Wrapf(err, "error on delete term (id: %v)", i.TermsID)
-	}
+	// err = s.TermsDelete(ctx, i.TermsID)
+	// if err != nil {
+	// 	return errors.Wrapf(err, "error on delete term (id: %v)", i.TermsID)
+	// }
 
 	res, err := s.invitations().DeleteOne(ctx, bson.M{"_id": iID})
 	if err != nil {

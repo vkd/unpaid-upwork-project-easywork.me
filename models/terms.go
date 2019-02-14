@@ -1,34 +1,32 @@
 package models
 
 import (
-	"time"
-
-	"github.com/mongodb/mongo-go-driver/bson/primitive"
 	"github.com/pkg/errors"
 )
 
-type TermsSet struct {
-	ID primitive.ObjectID `json:"id" bson:"id"`
+// type TermsSet struct {
+// 	ID primitive.ObjectID `json:"id" bson:"id"`
 
-	TermsSetBase
-}
+// 	TermsBase
+// }
 
-type TermsSetBase struct {
-	CreatedDateTime time.Time `json:"created_date_time" bson:"created_date_time"`
+type TermsBase struct {
+	// CreatedDateTime time.Time `json:"created_date_time" bson:"created_date_time"`
+	// InvitationID    primitive.ObjectID `json:"invitation_id" bson:"invitation_id"`
 
 	Currency           Currency `json:"currency_id" bson:"currency_id"`
 	PricePerHour       uint     `json:"price_per_hour" bson:"price_per_hour"`
 	WeeklyLimitInHours uint     `json:"weekly_limit_in_hours" bson:"weekly_limit_in_hours"`
 }
 
-func (t *TermsSetBase) PreCreate() *TermsSetBase {
+func (t *TermsBase) PreCreate() *TermsBase {
 	if t.Currency == "" {
 		t.Currency = EUR
 	}
 	return t
 }
 
-func (t *TermsSetBase) Validate() error {
+func (t *TermsBase) Validate() error {
 	if t.PricePerHour <= 0 || t.PricePerHour >= 500 {
 		return errors.Errorf("'price_per_hour' not valid (allow > 0 and < 500)")
 	}

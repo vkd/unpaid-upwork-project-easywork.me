@@ -46,6 +46,10 @@ func (s *Storage) TotalDaily(ctx context.Context, cID primitive.ObjectID, from, 
 	return out, nil
 }
 
+// func (s *Storage) TotalGet(ctx context.Context, cID primitive.ObjectID) (int, error) {
+// 	filter := bson.M{"contract_id": cID}
+// }
+
 // TotalsUpdate - update total value for contract_id by date
 func (s *Storage) TotalsUpdate(ctx context.Context, cID primitive.ObjectID, createdAt time.Time, value int) error {
 	date := createdAt.Format("2006-01-02")
