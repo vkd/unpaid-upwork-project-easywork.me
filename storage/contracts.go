@@ -69,11 +69,11 @@ func (s *Storage) ContractsCreate(ctx context.Context, c *models.ContractBase, o
 func (s *Storage) ContractsUpdateStatus(ctx context.Context, cID primitive.ObjectID, status models.ContractStatus, user *models.User) error {
 	c, err := s.ContractGet(ctx, cID, user)
 	if err != nil {
-		return errors.Wrapf(err, "cannot update status of contract (id: %v)", cID)
+		return errors.Wrapf(err, "cannot update status of contract (id: %v)", cID.Hex())
 	}
 
 	if c.Status == models.Ended {
-		return errors.Errorf("contract is ended (id: %v)", cID)
+		return errors.Errorf("contract is ended (id: %v)", cID.Hex())
 	}
 
 	if c.Status == status {
