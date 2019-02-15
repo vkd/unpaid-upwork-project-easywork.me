@@ -45,18 +45,18 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 
 	authMid := authMiddleware(cfg.SecretJWT)
 
-	auth := r.Group("/", authMid)
+	auth := r.Group("", authMid)
 	auth.PATCH("/profile", profileUpdateHandler(db))
 
 	user := auth.Group("/user")
 	{
-		user.GET("/", userGetHandler(db))
+		user.GET("", userGetHandler(db))
 		user.PATCH("/password", changePasswordHandler(db))
-		user.DELETE("/", userDeleteHandler(db))
+		user.DELETE("", userDeleteHandler(db))
 	}
 	users := auth.Group("/users")
 	{
-		users.GET("/", usersGetHandler(db))
+		users.GET("", usersGetHandler(db))
 		users.GET("/:user", userGetHandler(db))
 	}
 	tokens := auth.Group("/tokens")
@@ -65,34 +65,34 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	}
 	invitations := auth.Group("/invitations")
 	{
-		invitations.GET("/", invitationsGetHandler(db))
-		invitations.POST("/", AccessRole(models.Hire), invitationCreateHandler(db))
+		invitations.GET("", invitationsGetHandler(db))
+		invitations.POST("", AccessRole(models.Hire), invitationCreateHandler(db))
 		invitationID := invitations.Group("/:id")
 		{
-			invitationID.GET("/", invitationGetHandler(db))
+			invitationID.GET("", invitationGetHandler(db))
 			invitationID.POST("/accept", AccessRole(models.Work), invitationAcceptHandler(db))
 			invitationID.POST("/decline", AccessRole(models.Work), invitationDeclineHandler(db))
-			invitationID.DELETE("/", AccessRole(models.Hire), invitationDeleteHandler(db))
+			invitationID.DELETE("", AccessRole(models.Hire), invitationDeleteHandler(db))
 		}
 	}
 	projects := auth.Group("/projects")
 	{
-		projects.GET("/", projectsGetHandler(db))
-		projects.POST("/", AccessRole(models.Hire), projectCreateHandler(db))
+		projects.GET("", projectsGetHandler(db))
+		projects.POST("", AccessRole(models.Hire), projectCreateHandler(db))
 		projectID := projects.Group("/:id")
 		{
-			projectID.GET("/", projectGetHandler(db))
-			projectID.DELETE("/", AccessRole(models.Hire), projectDeleteHandler(db))
+			projectID.GET("", projectGetHandler(db))
+			projectID.DELETE("", AccessRole(models.Hire), projectDeleteHandler(db))
 		}
 	}
 	contracts := auth.Group("/contracts")
 	{
-		contracts.GET("/", contractsGetHandler(db))
-		contracts.POST("/", AccessRole(models.Hire), contractCreateHandler(db))
+		contracts.GET("", contractsGetHandler(db))
+		contracts.POST("", AccessRole(models.Hire), contractCreateHandler(db))
 
 		contractID := contracts.Group("/:id")
 		{
-			contractID.GET("/", contractGetHandler(db))
+			contractID.GET("", contractGetHandler(db))
 			contractID.GET("/dailies", totalDailyHandler(db))
 			contractID.GET("/totals", totalsGetHandler(db))
 
@@ -102,7 +102,7 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 
 			events := contractID.Group("/events")
 			{
-				events.GET("/", eventsGetHandler(db))
+				events.GET("", eventsGetHandler(db))
 				events.POST("/:type", AccessRole(models.Work), eventCreateHandler(db))
 			}
 		}
