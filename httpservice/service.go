@@ -57,6 +57,7 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 	users := auth.Group("/users")
 	{
 		users.GET("/", usersGetHandler(db))
+		users.GET("/:user", userGetHandler(db))
 	}
 	tokens := auth.Group("/tokens")
 	{
