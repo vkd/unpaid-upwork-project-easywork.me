@@ -42,6 +42,7 @@ func eventsGetHandler(db *storage.Storage) gin.HandlerFunc {
 				apiError(c, http.StatusBadRequest, err)
 				return
 			}
+			t = t.AddDate(0, 0, 1)
 			to = &t
 		}
 

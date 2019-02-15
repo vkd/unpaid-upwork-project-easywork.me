@@ -21,7 +21,7 @@ func (s *Storage) TotalDaily(ctx context.Context, cID primitive.ObjectID, from, 
 			byDate["$gte"] = from
 		}
 		if to != "" {
-			byDate["$lt"] = to
+			byDate["$lte"] = to
 		}
 		filter["date"] = byDate
 	}
