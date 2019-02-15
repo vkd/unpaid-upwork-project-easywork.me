@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/easywork.me/backend/models"
 	"gitlab.com/easywork.me/backend/storage"
+	"github.com/gin-contrib/static"
 )
 
 type Config struct {
@@ -26,6 +27,16 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 		gin.SetMode(gin.ReleaseMode)
 		r = gin.New()
 	}
+
+	r.Use(static.Serve("/", static.LocalFile("./frontend/", false)))
+	r.NoRoute(func(c *gin.Context) {
+		if c.Request.Method == "OPTIONS" {
+			c.Status(200)
+		} else {
+			c.File("./frontend/index.html")
+		}
+	})
+
 
 	claimer := &claimCreator{secret: cfg.SecretJWT}
 
