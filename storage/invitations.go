@@ -11,10 +11,17 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func (s *Storage) InvitationsGet(ctx context.Context, userID models.UserID) ([]models.Invitation, error) {
+func (s *Storage) InvitationsGet(ctx context.Context, user *models.User) ([]models.Invitation, error) {
 	var out = []models.Invitation{}
 
-	cur, err := s.invitations().Find(ctx, bson.M{"owner_id": userID})
+	filter := bson.M{}
+	switch user.Role {
+	case models.Hire:
+		filter["owner_id"] = user.ID
+	case models.Work:
+		filter["invitee_id"] = user.ID
+	}
+	cur, err := s.invitations().Find(ctx, filter)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error on get invitations")
 	}
@@ -44,7 +51,7 @@ func (s *Storage) InvitationCreate(ctx context.Context, inv *models.InvitationBa
 
 	u, err := s.UserGetByIDOrEmail(ctx, inv.InviteeID, inv.InviteeEmail)
 	if err != nil {
-		return nil, errors.Wrapf(err, "invitation not created")
+		return nil, errors.Wrapf(err, "user not found")
 	}
 	if u.Role != models.Work {
 		return nil, errors.Errorf("cannot allow to invite non-work type of user (id: %v, email: %v)", u.ID, u.Email)

@@ -13,7 +13,7 @@ func invitationsGetHandler(db *storage.Storage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := getUser(c)
 
-		invs, err := db.InvitationsGet(c, user.ID)
+		invs, err := db.InvitationsGet(c, user)
 		if err != nil {
 			apiError(c, http.StatusInternalServerError, err)
 			return
