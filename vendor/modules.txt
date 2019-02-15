@@ -4,6 +4,8 @@ github.com/dgrijalva/jwt-go
 github.com/gin-contrib/cors
 # github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7
 github.com/gin-contrib/sse
+# github.com/gin-contrib/static v0.0.0-20181225054800-cf5e10bbd933
+github.com/gin-contrib/static
 # github.com/gin-gonic/gin v1.3.0
 github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding

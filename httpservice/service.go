@@ -4,12 +4,12 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/pkg/errors"
 	"gitlab.com/easywork.me/backend/models"
 	"gitlab.com/easywork.me/backend/storage"
-	"github.com/gin-contrib/static"
 )
 
 type Config struct {
@@ -36,7 +36,6 @@ func Start(cfg Config, isDebug bool, db *storage.Storage) error {
 			c.File("./frontend/index.html")
 		}
 	})
-
 
 	claimer := &claimCreator{secret: cfg.SecretJWT}
 
