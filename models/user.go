@@ -7,7 +7,7 @@ type UserID string
 type User struct {
 	ID    UserID `json:"id,omitempty" bson:"id"`
 	Email string `json:"email,omitempty" bson:"email"`
-	Role  Role   `json:"user_type" bson:"user_type"`
+	Role  Role   `json:"user_type" bson:"role"`
 
 	UserProfile `bson:"inline"`
 }
